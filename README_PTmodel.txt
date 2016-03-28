@@ -1,0 +1,41 @@
+「The ONE」のモビリティモデルの設定
+default_setting.txtの56行目
+# Common settings for all groups
+以降に記述する
+Group1.movementModel = SakaeStationMovement
+Group2.movementModel = ShortestPathFromSakaeStationToRandomDestination
+のように複数のモビリティモデルを指定することも可能（33行目のScenario.nrofHostGroupsでモビリティモデルの種類数を指定）
+ここでモビリティモデルの切り替えを行う
+・モビリティモデル
+SakaeStationMovement：栄駅に位置する固定ノード
+ShopMovement：地図の中央付近に位置する固定ノード
+ShortestPathFromSakaeStationToRandomDestination：栄駅を起点に移動する（PTモデル・HLWの両移動モデルのソースコード）
+ShortestPathFromSakaeStationToRandomDestinationではPTモデルとHLWの両移動モデルを実装
+いくつかのコードを変更する必要あり（移動距離の算出式や帰巣確率の設定など）
+
+ShortestPathFromSakaeStationToRandomDestinationの変更点一覧（PTモデルとHLWの切り替え）
+
+１・移動距離
+ShortestPathFromSakaeStationToRandomDestinationの327行目FindRadiusメソッドの中身
+PTモデルならガンマ分布を採用
+HLWならパレート分布を採用
+
+２・帰巣確率
+ShortestPathFromSakaeStationToRandomDestinationの287行目FindRadiusメソッドの中身
+PTモデルの帰巣確率は場合分け（292行〜313行）
+HLWの帰巣確率は一定（291行）
+
+３・次の移動を開始するまで待ち時間（施設滞在時間）
+DTNHostクラスに記述されている変数nextTimeToMoveに待ち時間の値を代入することで設定する
+nextTimeToMoveはnextPathAvailable＊＊＊()から値を参照する
+
+nextPathAvailableForstart()：シミュレーション開始から何秒後にノードが動き出すか
+nextPathAvailable() ：(目的_出勤_滞在時間分布）
+nextPathAvailablePurposeForfree()：（目的_自由_滞在時間分布）
+nextPathAvailablePurposeForwork() ：（目的_業務_滞在時間分布）
+そして、nextPathAvailable＊＊＊()はgenerateWaitTime()から値を参照する
+generateWaitTime＊＊＊()の乱数生成の式を変更することで次の移動を開始するまで待ち時間を変更
+
+default_setting.txtの111行目
+######## CREAT END_POINT_LOCATION
+ここで地図情報(wktファイル)の指定を行う
